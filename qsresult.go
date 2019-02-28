@@ -19,12 +19,12 @@ func main() {
 	argc := len(args)
 
 	var sourcePath string
-	//var targetPath string
+	var targetPath string
 
 	switch argc {
 	case 3:
 		sourcePath = args[1]
-		//targetPath = args[2]
+		targetPath = args[2]
 	default:
 		help()
 		return
@@ -38,6 +38,10 @@ func main() {
 	}
 	defer resultFile.Close()
 
+	var successLine string
+	var order string
+	var mkdirErr error
+	var renameErr error
 	br := bufio.NewReader(resultFile)
 	for {
 		line, _, e := br.ReadLine()
@@ -45,10 +49,16 @@ func main() {
 			break
 		}
 		fmt.Println(string(line))
-		successLine := strings.Split(string(line), ": ")[0]
-		order := strings.Split(successLine, " ")[1]
-		//successFile, openErr := os.Open
-		fmt.Println(sourcePath + string(filepath.Separator) + "listbucket_success_" +
-			order + ".txt")
+		successLine = strings.Split(string(line), ": ")[0]
+		order = strings.Split(successLine, " ")[1]
+		successFilePath := sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
+		mkdirErr = os.Mkdir(targetPath, 0)
+		if mkdirErr != nil {
+			fmt.Printf("mkdir %s error: %s\n", targetPath, err)
+		}
+		renameErr = os.Rename(successFilePath, targetPath + string(filepath.Separator) + order + ".txt")
+		if renameErr != nil {
+			fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
+		}
 	}
 }
