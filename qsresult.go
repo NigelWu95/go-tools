@@ -23,8 +23,8 @@ func main() {
 
 	switch argc {
 	case 3:
-		//targetPath = args[1]
-		sourcePath = args[2]
+		sourcePath = args[1]
+		//targetPath = args[2]
 	default:
 		help()
 		return
