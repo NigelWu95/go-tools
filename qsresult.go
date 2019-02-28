@@ -48,7 +48,7 @@ func main() {
 		successLine := strings.Split(string(line), ": ")[0]
 		order := strings.Split(successLine, " ")[1]
 		//successFile, openErr := os.Open
-		fmt.Printf(sourcePath + string(filepath.Separator) + "listbucket_success_" +
+		fmt.Println(sourcePath + string(filepath.Separator) + "listbucket_success_" +
 			order + ".txt")
 	}
 }
