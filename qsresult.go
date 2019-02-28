@@ -13,6 +13,17 @@ func help() {
 	fmt.Printf("Usage: qsresult <source-dir-path> <target-dir-path>\r\n")
 }
 
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 func main() {
 
 	args := os.Args
@@ -25,6 +36,18 @@ func main() {
 	case 3:
 		sourcePath = args[1]
 		targetPath = args[2]
+		exist, err := PathExists(targetPath)
+		if err == nil {
+			if !exist {
+				mkdirErr := os.Mkdir(targetPath, 0)
+				if mkdirErr != nil {
+					fmt.Printf("mkdir %s error: %s\n", targetPath, err)
+				}
+			}
+		} else {
+			fmt.Printf("Error: %s\n", err)
+		}
+
 	default:
 		help()
 		return
@@ -40,7 +63,7 @@ func main() {
 
 	var successLine string
 	var order string
-	var mkdirErr error
+	var successFilePath string
 	var renameErr error
 	br := bufio.NewReader(resultFile)
 	for {
@@ -48,14 +71,9 @@ func main() {
 		if e == io.EOF {
 			break
 		}
-		fmt.Println(string(line))
 		successLine = strings.Split(string(line), ": ")[0]
 		order = strings.Split(successLine, " ")[1]
-		successFilePath := sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
-		mkdirErr = os.Mkdir(targetPath, 0)
-		if mkdirErr != nil {
-			fmt.Printf("mkdir %s error: %s\n", targetPath, err)
-		}
+		successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
 		renameErr = os.Rename(successFilePath, targetPath + string(filepath.Separator) + order + ".txt")
 		if renameErr != nil {
 			fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
