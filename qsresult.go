@@ -64,12 +64,12 @@ func main() {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
-	defer resultFile.Close()
 
 	var successLine string
 	var order string
 	var successFilePath string
 	var renameErr error
+	var unmoved []string
 	br := bufio.NewReader(resultFile)
 	for {
 		line, _, e := br.ReadLine()
@@ -81,7 +81,31 @@ func main() {
 		successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
 		renameErr = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
 		if renameErr != nil {
+			unmoved = append(unmoved, string(line))
 			fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
+		}
+	}
+	closeErr := resultFile.Close()
+	if closeErr != nil {
+		fmt.Printf("close \"result.txt\" error: %s\n", err)
+	}
+
+	if len(unmoved) > 0 {
+		resultFile, err = os.Create(resultFilePath)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
+		}
+		_, err = resultFile.WriteString(strings.Join(unmoved, "\n"))
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
+		}
+	} else {
+		err = os.Remove(resultFilePath)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
 		}
 	}
 }
