@@ -54,6 +54,11 @@ func main() {
 	}
 
 	resultFilePath := string(sourcePath + string(filepath.Separator) + "result.txt")
+	exist, err := PathExists(resultFilePath)
+	if exist {
+		fmt.Printf("no more finished files.")
+		return
+	}
 	resultFile, err := os.Open(resultFilePath)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -74,7 +79,7 @@ func main() {
 		successLine = strings.Split(string(line), ": ")[0]
 		order = strings.Split(successLine, " ")[1]
 		successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
-		renameErr = os.Rename(successFilePath, targetPath + string(filepath.Separator) + order + ".txt")
+		renameErr = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
 		if renameErr != nil {
 			fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
 		}
