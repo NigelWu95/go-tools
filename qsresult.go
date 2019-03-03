@@ -54,6 +54,7 @@ func main() {
 	}
 
 	resultFilePath := string(sourcePath + string(filepath.Separator) + "result.txt")
+	fmt.Println(resultFilePath)
 	exist, err := PathExists(resultFilePath)
 	if exist {
 		fmt.Printf("no more finished files.")
