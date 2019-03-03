@@ -65,6 +65,7 @@ func main() {
 		return
 	}
 
+	var strLine string
 	var successLine string
 	var order string
 	var successFilePath string
@@ -76,13 +77,16 @@ func main() {
 		if e == io.EOF {
 			break
 		}
-		successLine = strings.Split(string(line), ": ")[0]
-		order = strings.Split(successLine, " ")[1]
-		successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
-		renameErr = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
-		if renameErr != nil {
-			unmoved = append(unmoved, string(line))
-			fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
+		strLine = string(line)
+		if strings.Contains(strLine, "successfully done") {
+			successLine = strings.Split(string(line), ": ")[0]
+			order = strings.Split(successLine, " ")[1]
+			successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
+			renameErr = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
+			if renameErr != nil {
+				unmoved = append(unmoved, string(line))
+				fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
+			}
 		}
 	}
 	closeErr := resultFile.Close()
