@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,19 +14,18 @@ func help() {
 	fmt.Printf("Usage: qsresult <source-dir-path> <target-dir-path>\r\n")
 }
 
-func PathExists(path string) (bool, bool, error) {
+func PathExists(path string) (bool, bool, os.FileMode,  error) {
 	fileInfo, err := os.Stat(path)
 
 	if fileInfo != nil {
-		fmt.Printf(path + "'s mode is: %s\n", fileInfo.Mode())
-		return err == nil, fileInfo.IsDir(), err
+		return err == nil, fileInfo.IsDir(), fileInfo.Mode(), err
 	}
 
 	if err == nil {
-		return true, false, nil
+		return true, false, 0, errors.New("can not get the file info")
 	}
 
-	return !os.IsNotExist(err) && os.IsPermission(err), false, err
+	return !os.IsNotExist(err) && os.IsPermission(err), false, 0, err
 }
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 	case 3:
 		sourcePath = args[1]
 		targetPath = args[2]
-		exist, _, err := PathExists(targetPath)
+		exist, _, _, err := PathExists(targetPath)
 		if err == nil {
 			if !exist {
 				mkdirErr := os.Mkdir(targetPath, 0755)
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	resultFilePath := string(sourcePath + string(filepath.Separator) + "result.txt")
-	exist, _, err := PathExists(resultFilePath)
+	exist, _, _, err := PathExists(resultFilePath)
 	if !exist {
 		fmt.Printf("no more finished files, error: %s\n", err.Error())
 		return
