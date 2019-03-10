@@ -41,11 +41,11 @@ func main() {
 			if !exist {
 				mkdirErr := os.Mkdir(targetPath, 0)
 				if mkdirErr != nil {
-					fmt.Printf("mkdir %s error: %s\n", targetPath, err)
+					fmt.Printf("mkdir %s error: %s\n", targetPath, err.Error())
 				}
 			}
 		} else {
-			fmt.Printf("Error: %s\n", err)
+			fmt.Printf("Error: %s\n", err.Error())
 		}
 
 	default:
@@ -61,55 +61,64 @@ func main() {
 	}
 	resultFile, err := os.Open(resultFilePath)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Error: %s\n", err.Error())
 		return
 	}
 
-	var strLine string
-	var successLine string
+	var lineItems []string
 	var order string
 	var successFilePath string
-	var renameErr error
-	var unmoved []string
+	var rewriteLines []string
+	var successMap = map[string]string{}
 	br := bufio.NewReader(resultFile)
 	for {
 		line, _, e := br.ReadLine()
 		if e == io.EOF {
 			break
 		}
-		strLine = string(line)
-		if strings.Contains(strLine, "successfully done") {
-			successLine = strings.Split(string(line), ": ")[0]
-			order = strings.Split(successLine, " ")[1]
+
+		if strings.Contains(string(line), "successfully done") {
+			lineItems = strings.Split(string(line), " ")
+			order = strings.Split(lineItems[1], ":")[0]
 			successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
-			renameErr = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
-			if renameErr != nil {
-				unmoved = append(unmoved, string(line))
-				fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err)
+			err = os.Rename(successFilePath, targetPath+string(filepath.Separator)+order+".txt")
+			if err != nil {
+				rewriteLines = append(rewriteLines, string(line))
+				fmt.Printf("move %s to %s error: %s\n", successFilePath, targetPath, err.Error())
+			} else {
+				successMap[strings.Join(lineItems[0:2], " ")] = strings.Split(lineItems[2], "\t")[0]
+			}
+		} else {
+			rewriteLines = append(rewriteLines, string(line))
+		}
+	}
+
+	closeErr := resultFile.Close()
+	if closeErr != nil {
+		fmt.Printf("close \"result.txt\" error: %s\n", err.Error())
+	}
+	resultFile, err = os.Create(resultFilePath)
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		return
+	}
+	writer := bufio.NewWriter(resultFile)
+
+	var key string
+	for _, line := range rewriteLines {
+		lineItems = strings.Split(line, " ")
+		key = strings.Join(lineItems[0:2], " ")
+		if _, ok := successMap[key]; !ok {
+			_, err = fmt.Fprintln(writer, line)
+			if err != nil {
+				fmt.Printf("Error: %s\n", err.Error())
+				return
 			}
 		}
 	}
-	closeErr := resultFile.Close()
-	if closeErr != nil {
-		fmt.Printf("close \"result.txt\" error: %s\n", err)
-	}
-
-	if len(unmoved) > 0 {
-		resultFile, err = os.Create(resultFilePath)
-		if err != nil {
-			fmt.Printf("Error: %s\n", err)
-			return
-		}
-		_, err = resultFile.WriteString(strings.Join(unmoved, "\n"))
-		if err != nil {
-			fmt.Printf("Error: %s\n", err)
-			return
-		}
-	} else {
-		err = os.Remove(resultFilePath)
-		if err != nil {
-			fmt.Printf("Error: %s\n", err)
-			return
-		}
+	err = writer.Flush()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		return
 	}
 }
