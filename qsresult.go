@@ -12,7 +12,7 @@ import (
 )
 
 func help() {
-	fmt.Printf("Usage: qsresult <source-dir-path> <target-dir-path>\r\n")
+	fmt.Printf("Usage: qsresult <source-dir> <target-dir> <result-type>(list/file/filter)\r\n")
 }
 
 // If the file not exists, the err is must not be nil
@@ -33,16 +33,19 @@ func PathExists(path string) (bool, bool, os.FileMode,  error) {
 func main() {
 
 	args := os.Args
-	args = append(args, "../temp2")
-	args = append(args, "../temp3")
+	//args = append(args, "../temp2")
+	//args = append(args, "../temp3")
+	//args = append(args, "list")
 
 	var sourcePath string
 	var targetPath string
+	var resultType string
 	argc := len(args)
 	switch argc {
-	case 3:
+	case 4:
 		sourcePath = args[1]
 		targetPath = args[2]
+		resultType = args[3]
 		exist, isDir, mode, err := PathExists(targetPath)
 		if exist {
 			if isDir && mode < 0755 {
@@ -82,6 +85,18 @@ func main() {
 		return
 	}
 
+	var filePrefix string
+	if strings.Compare(resultType, "list") == 0 {
+		filePrefix = "listbucket_success_"
+	} else if strings.Compare(resultType, "file") == 0 {
+		filePrefix = "fileinput_success_"
+	} else if strings.Compare(resultType, "filter") == 0 {
+		filePrefix = "filter_success_"
+	} else {
+		fmt.Printf("this type: %s is unsupported now.\n", resultType);
+		return
+	}
+
 	var lineItems []string
 	var order string
 	var successFilePath string
@@ -97,7 +112,7 @@ func main() {
 		if strings.Contains(string(line), "successfully done") {
 			lineItems = strings.Split(string(line), " ")
 			order = strings.Split(lineItems[1], ":")[0]
-			successFilePath = sourcePath + string(filepath.Separator) + "listbucket_success_" + order + ".txt"
+			successFilePath = sourcePath + string(filepath.Separator) + filePrefix + order + ".txt"
 			err = os.Rename(successFilePath, targetPath + string(filepath.Separator) + order + ".txt")
 			if err != nil {
 				rewriteLines = append(rewriteLines, string(line))
