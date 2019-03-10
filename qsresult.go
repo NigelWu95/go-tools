@@ -8,12 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 func help() {
 	fmt.Printf("Usage: qsresult <source-dir-path> <target-dir-path>\r\n")
 }
 
+// If the file not exists, the err is must not be nil
 func PathExists(path string) (bool, bool, os.FileMode,  error) {
 	fileInfo, err := os.Stat(path)
 
@@ -25,7 +27,7 @@ func PathExists(path string) (bool, bool, os.FileMode,  error) {
 		return true, false, 0, errors.New("can not get the file info")
 	}
 
-	return !os.IsNotExist(err) && os.IsPermission(err), false, 0, err
+	return !os.IsNotExist(err), false, 0, err
 }
 
 func main() {
@@ -41,21 +43,26 @@ func main() {
 	case 3:
 		sourcePath = args[1]
 		targetPath = args[2]
-		exist, _, _, err := PathExists(targetPath)
-		if err == nil {
-			if !exist {
-				mkdirErr := os.Mkdir(targetPath, 0755)
-				if mkdirErr != nil {
-					fmt.Printf("mkdir %s error: %s\n", targetPath, err.Error())
-				}
+		exist, isDir, mode, err := PathExists(targetPath)
+		if exist {
+			if isDir && mode < 0755 {
+				syscall.Umask(0)
+				err = os.Chmod(targetPath, 0755)
+			}
+			if !isDir {
+				fmt.Printf("the %s is not directory.\n", targetPath)
+				return
 			}
 		} else {
-			fmt.Printf("Error: %s\n", err.Error())
+			if os.IsPermission(err) {
+				syscall.Umask(0)
+				err = os.Chmod(targetPath, 0755)
+			} else {
+				err = os.Mkdir(targetPath, 0755)
+			}
 		}
-		//syscall.Umask(0)
-		//err = os.Chmod(targetPath, 0755)
 		if err != nil {
-			fmt.Printf("Error: %s\n", err.Error())
+			fmt.Printf("get target path \"%s\" error: %s\n", targetPath, err.Error())
 			return
 		}
 	default:
