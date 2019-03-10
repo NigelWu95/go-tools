@@ -13,16 +13,19 @@ func help() {
 	fmt.Printf("Usage: qsresult <source-dir-path> <target-dir-path>\r\n")
 }
 
-func PathExists(path string) (bool, error) {
+func PathExists(path string) (bool, bool, error) {
 	fileInfo, err := os.Stat(path)
+
+	if fileInfo != nil {
+		fmt.Printf(path + "'s mode is: %s\n", fileInfo.Mode())
+		return err == nil, fileInfo.IsDir(), err
+	}
+
 	if err == nil {
-		fmt.Println(fileInfo.Mode())
-		return true, nil
+		return true, false, nil
 	}
-	if os.IsNotExist(err) {
-		return false, err
-	}
-	return true, nil
+
+	return !os.IsNotExist(err) && os.IsPermission(err), false, err
 }
 
 func main() {
@@ -38,7 +41,7 @@ func main() {
 	case 3:
 		sourcePath = args[1]
 		targetPath = args[2]
-		exist, err := PathExists(targetPath)
+		exist, _, err := PathExists(targetPath)
 		if err == nil {
 			if !exist {
 				mkdirErr := os.Mkdir(targetPath, 0755)
@@ -61,7 +64,7 @@ func main() {
 	}
 
 	resultFilePath := string(sourcePath + string(filepath.Separator) + "result.txt")
-	exist, err := PathExists(resultFilePath)
+	exist, _, err := PathExists(resultFilePath)
 	if !exist {
 		fmt.Printf("no more finished files, error: %s\n", err.Error())
 		return
