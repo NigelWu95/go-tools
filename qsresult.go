@@ -14,29 +14,26 @@ func help() {
 }
 
 func PathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+	fileInfo, err := os.Stat(path)
 	if err == nil {
+		fmt.Println(fileInfo.Mode())
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return false, err
 	}
-	return false, err
+	return true, nil
 }
 
 func main() {
 
 	args := os.Args
-	argc := len(args)
-
-	//args := os.Args
-	//args = append(args, "../temp2")
-	//args = append(args, "../temp3")
-	//argc := len(args)
+	args = append(args, "../temp2")
+	args = append(args, "../temp3")
 
 	var sourcePath string
 	var targetPath string
-
+	argc := len(args)
 	switch argc {
 	case 3:
 		sourcePath = args[1]
